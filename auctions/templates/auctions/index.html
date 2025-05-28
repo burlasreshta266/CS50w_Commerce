@@ -5,12 +5,12 @@
         <div class="row mx-3">
             {% for listing in listings %}
             <div class="card" style="width: 18rem;">
-                <img src="{{ listing.imageURL }}" class="card-img-top" alt="...">
+                <img src="{{ listing.imageURL }}" class="card-img-top" alt="product image">
                 <div class="card-body">
                     <h5 class="card-title">{{ listing.title }}</h5>
                     <h6 class="card-title">${{ listing.price }}</h6>
                     <p class="card-text">{{ listing.description }}</p>
-                    <a href="#" class="btn btn-primary">view listing</a>
+                    <a href="{% url 'listing_page' id=listing.id %}" class="btn btn-primary">view listing</a>
                 </div>
             </div>           
             {% endfor %}

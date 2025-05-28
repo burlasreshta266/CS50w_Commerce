@@ -1,0 +1,41 @@
+{% extends "auctions/layout.html" %}
+{% block body %}
+
+<div>
+    {% if message %}
+        {% if message == "success" %}
+            <div class="alert alert-success" role="alert">
+                Your bid is successfully placed!
+            </div>
+        {% elif message == "not sign in" %}
+            <div class="alert alert-danger" role="alert">
+                Log in before placing bid
+            </div>
+        {% else %}
+            <div class="alert alert-danger" role="alert">
+                Your bid was NOT placed
+            </div>
+        {% endif %}
+    {% endif %}
+</div>
+
+<h2>{{ listing.title }}</h2>
+<button type="button" class="btn btn-success">Watchlist</button>
+<img src="{{ listing.imageURL }}" alt="Product image" width="60%" style="display: block; padding: 15px; border-radius: 5%;">
+<p>{{ listing.description }}</p>
+<h3>${{ listing.price }}</h3>
+<form action="{% url 'place_bid' id=listing.id %}" method="post">
+    {% csrf_token %}
+    <p>Your bid will be the current bid. Make sure it is higher than current price</p>
+    {{ bid_form }}
+    <div style="height: 10px;"></div>
+    <button type="submit" class="btn btn-info">Bid</button>
+</form>
+<div style="height: 25px;"></div>
+<h4>Details:</h4>
+<ul>
+    <li>Sold by: {{ listing.seller }}</li>
+    <li>Category: {{ listing.category }}</li>
+</ul>
+
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    <h2>Create a new Listing</h2>
+    {% if message %}
+    <h4>ERROR in the details entered</h4>
+    {% endif %}
+    <form action="{% url 'create_listing' %}" method="post">
+        {% csrf_token %}
+        {{ form }}
+        <div style="height: 15px;"></div>
+        <button type="submit" class="btn btn-info">Create listing</button>
+    </form>
+{% endblock %}

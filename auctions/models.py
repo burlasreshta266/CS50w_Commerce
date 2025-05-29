@@ -23,5 +23,8 @@ class Listing(models.Model):
     price = models.DecimalField(decimal_places=2, max_digits=10)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="listings", default="not defined")
     imageURL = models.CharField(default="none")
+    active = models.BooleanField(default=True)
+    latest_bid = models.ForeignKey(Bid, on_delete=models.CASCADE, related_name="listings", default=1.00)
+
     def __str__(self):
         return f"{self.title}"

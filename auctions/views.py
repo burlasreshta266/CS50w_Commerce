@@ -5,24 +5,17 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django import forms
-from .models import User, Listing, Category
+from .models import User, Listing, Category, Bid
 
 
 def index(request):
-    if request.user.is_authenticated:
-        user = request.user
-        if len(user.listings.all())==0:
-            return render(request, "auctions/index.html", {
-                "listings" : ["no listings"]
-            })
-        else:
-            return render(request, "auctions/index.html", {
-                "listings" : user.listings.all()
-            })
+    if len(Listing.objects.all().filter(active=True))==0:
+        return render(request, "auctions/error.html")
     else:
         return render(request, "auctions/index.html", {
-                "listings" : Listing.objects.all()
+                "listings" : Listing.objects.all().filter(active=True)
         })
+        
 
 def login_view(request):
     if request.method == "POST":
@@ -111,10 +104,13 @@ def create_listing(request):
             title = form.cleaned_data["title"]
             description = form.cleaned_data["description"]
             price = form.cleaned_data["price"]
+            category = form.cleaned_data["category"]
             imageURL = form.cleaned_data["imgURL"]
             user = request.user
+            start_bid = Bid(price=price, user=user)
+            start_bid.save()
             newListing = Listing(title=title, description=description, seller=user,
-                price=price, category=category, imageURL=imageURL )
+                price=price, category=category, imageURL=imageURL, latest_bid=start_bid )
             newListing.save()
             return HttpResponseRedirect(reverse(index))
         else:
@@ -152,12 +148,16 @@ def place_bid(request, id):
             if form.is_valid():
                 placed_bid = form.cleaned_data["bid"]
                 if placed_bid>listing.price:
+                    curr_bid = Bid(placed_bid, request.user)
+                    curr_bid.save()
                     listing.price = placed_bid
+                    listing.latest_bid = curr_bid
                     listing.save()
                     return render(request, "auctions/listing_page.html", {
                         "listing": listing,
                         "bid_form" : form,
-                        "message" : "success"
+                        "message" : "success",
+                        "username" : request.user.username
                     })
                 else:
                     return render(request, "auctions/listing_page.html", {
@@ -172,7 +172,7 @@ def place_bid(request, id):
                 "message" : "fail"
                 })
         else:
-            return HttpResponseRedirect(reverse(listing_page))
+            return HttpResponseRedirect(reverse(index))
     
 # List of Categories
 def all_categories(request):

@@ -24,13 +24,18 @@
 <img src="{{ listing.imageURL }}" alt="Product image" width="60%" style="display: block; padding: 15px; border-radius: 5%;">
 <p>{{ listing.description }}</p>
 <h3>${{ listing.price }}</h3>
+
 <form action="{% url 'place_bid' id=listing.id %}" method="post">
     {% csrf_token %}
     <p>Your bid will be the current bid. Make sure it is higher than current price</p>
+    {% if username %}
+    <p>latest bid was placed by {{ username }}</p>
+    {% endif %}
     {{ bid_form }}
     <div style="height: 10px;"></div>
     <button type="submit" class="btn btn-info">Bid</button>
 </form>
+
 <div style="height: 25px;"></div>
 <h4>Details:</h4>
 <ul>

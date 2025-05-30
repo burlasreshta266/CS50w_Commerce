@@ -28,3 +28,12 @@ class Listing(models.Model):
 
     def __str__(self):
         return f"{self.title}"
+    
+class Comment(models.Model):
+    title = models.CharField(max_length=70)
+    content = models.TextField(max_length=700)
+    listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="comments", default="not found")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Comments", default="not found")
+    def __str__(self):
+        return f"{self.title}"
+   

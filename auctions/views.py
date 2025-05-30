@@ -5,7 +5,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django.contrib.auth.decorators import login_required
 from django import forms
-from .models import User, Listing, Category, Bid
+from .models import User, Listing, Category, Bid, Comment
 
 
 def index(request):
@@ -95,6 +95,16 @@ class BidForm(forms.Form):
         'style': 'width:70%', 'class': 'form-control', 'placeholder':'Make sure bid is greater than price'
     }))
 
+# Comment form
+class CommentForm(forms.Form):
+    title = forms.CharField(widget=forms.TextInput(attrs={
+        'style': 'width:70%', 'class': 'form-control', 'placeholder':'Enter the main points in 5 to 10 words',
+    }))
+    content = forms.CharField(widget=forms.Textarea(attrs={
+        'style': 'width:70%', 'class': 'form-control', 
+        'placeholder':'Enter your product review or any other comments'
+    }))
+
 
 # Create a new Listing
 def create_listing(request):
@@ -127,9 +137,16 @@ def create_listing(request):
 # Listing page
 def listing_page(request, id):
     listing = Listing.objects.all().get(pk=id)
+    user_is_seller = False
+    if request.user.is_authenticated:
+        if(listing.seller == request.user):
+            user_is_seller = True
     return render(request, "auctions/listing_page.html", {
         "listing": listing,
-        "bid_form" : BidForm()
+        "bid_form" : BidForm(),
+        "user_is_seller" : user_is_seller,
+        "user" : request.user,
+        "comment_form" : CommentForm(),
     })
 
 
@@ -148,7 +165,7 @@ def place_bid(request, id):
             if form.is_valid():
                 placed_bid = form.cleaned_data["bid"]
                 if placed_bid>listing.price:
-                    curr_bid = Bid(placed_bid, request.user)
+                    curr_bid = Bid(price=placed_bid, user=request.user)
                     curr_bid.save()
                     listing.price = placed_bid
                     listing.latest_bid = curr_bid
@@ -157,7 +174,6 @@ def place_bid(request, id):
                         "listing": listing,
                         "bid_form" : form,
                         "message" : "success",
-                        "username" : request.user.username
                     })
                 else:
                     return render(request, "auctions/listing_page.html", {
@@ -188,3 +204,32 @@ def category_list(request, id):
         return render(request, "auctions/index.html", {
             "listings" : category.listings.all()
         })
+    
+# Close auction
+def close_auction(request, id):
+    if request.method=="POST":
+        listing = Listing.objects.all().get(pk=id)
+        listing.active = False
+        listing.save()
+        return HttpResponseRedirect(reverse(listing_page))
+    else:
+        return HttpResponseRedirect(reverse(listing_page))
+    
+# Make comment
+def add_comment(request, id):
+    if request.user.is_authenticated:
+        if request.method=="POST":
+            form = CommentForm(request.POST)
+            if form.is_valid():
+                title = form.cleaned_data["title"]
+                content = form.cleaned_data["content"]
+                com = Comment(title=title, content=content, 
+                    listing=Listing.objects.all().get(pk=id), user=request.user)
+                com.save()
+                return HttpResponseRedirect(reverse(listing_page, args=(id,)))
+            else:
+                return HttpResponseRedirect(reverse(listing_page, args=(id,)))
+        else:
+            return HttpResponseRedirect(reverse(listing_page, args=(id,)))
+    else:
+        return HttpResponseRedirect(reverse(listing_page, args=(id,)))

@@ -17,24 +17,36 @@
             </div>
         {% endif %}
     {% endif %}
+
+    {% if not listing.active %}
+        <div class="alert alert-info" role="alert">
+            Auction is CLOSED. {{ listing.latest_bid.user.username}} won it!!
+        </div>
+    {% endif %}
 </div>
 
 <h2>{{ listing.title }}</h2>
+
 <button type="button" class="btn btn-success">Watchlist</button>
+
+<div style="height: 15px;"></div>
+
 <img src="{{ listing.imageURL }}" alt="Product image" width="60%" style="display: block; padding: 15px; border-radius: 5%;">
 <p>{{ listing.description }}</p>
 <h3>${{ listing.price }}</h3>
 
+{% if listing.active %}
 <form action="{% url 'place_bid' id=listing.id %}" method="post">
     {% csrf_token %}
     <p>Your bid will be the current bid. Make sure it is higher than current price</p>
-    {% if username %}
-    <p>latest bid was placed by {{ username }}</p>
-    {% endif %}
+    <p>Latest bid by: {{ listing.latest_bid.user.username }}</p>
     {{ bid_form }}
     <div style="height: 10px;"></div>
     <button type="submit" class="btn btn-info">Bid</button>
 </form>
+{% else %}
+<h3>Sold to: {{ listing.latest_bid.user.username }}</h3>
+{% endif %}
 
 <div style="height: 25px;"></div>
 <h4>Details:</h4>
@@ -42,5 +54,26 @@
     <li>Sold by: {{ listing.seller }}</li>
     <li>Category: {{ listing.category }}</li>
 </ul>
+
+{% if user.isauthenticated %}
+<form action="{% url 'add_comment' id=listing.id %}" method="post">
+    {% csrf_token %}
+    {{ comment_form }}
+    <button type="submit" class="btn btn-info">Add comment</button>
+</form>
+<div style="height: 15px;"></div>
+{% endif %}
+
+<h5>Comments: </h5>
+{% for comment in listing.comments.all %}
+    <div class="card" style="width: 90%;">
+        <div class="card-body">
+            <h6 class="card-title">{{ comment.title }}</h6>
+            <h6 class="card-subtitle mb-2 text-muted">by {{ comment.user }}</h6>
+            <p class="card-text">{{ comment.content }}</p>
+        </div>
+    </div>
+{% endfor %}
+
 
 {% endblock %}

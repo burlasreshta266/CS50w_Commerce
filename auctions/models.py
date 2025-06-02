@@ -25,6 +25,7 @@ class Listing(models.Model):
     imageURL = models.CharField(default="none")
     active = models.BooleanField(default=True)
     latest_bid = models.ForeignKey(Bid, on_delete=models.CASCADE, related_name="listings", default=1.00)
+    watchlist = models.ManyToManyField(User, blank=True, null=True, related_name="watchlisted")
 
     def __str__(self):
         return f"{self.title}"

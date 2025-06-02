@@ -13,7 +13,7 @@ def index(request):
         return render(request, "auctions/error.html")
     else:
         return render(request, "auctions/index.html", {
-                "listings" : Listing.objects.all().filter(active=True)
+                "listings" : Listing.objects.all()
         })
         
 
@@ -138,15 +138,23 @@ def create_listing(request):
 def listing_page(request, id):
     listing = Listing.objects.all().get(pk=id)
     user_is_seller = False
+    winner = False
+    watchlisted = False
     if request.user.is_authenticated:
         if(listing.seller == request.user):
             user_is_seller = True
+        if (not listing.active) and (request.user==listing.latest_bid.user):
+            winner = True
+        if request.user in listing.watchlist.all():
+            watchlisted = True
     return render(request, "auctions/listing_page.html", {
         "listing": listing,
         "bid_form" : BidForm(),
         "user_is_seller" : user_is_seller,
         "user" : request.user,
         "comment_form" : CommentForm(),
+        "winner" : winner,
+        "watchlisted" : watchlisted,
     })
 
 
@@ -211,11 +219,13 @@ def close_auction(request, id):
         listing = Listing.objects.all().get(pk=id)
         listing.active = False
         listing.save()
-        return HttpResponseRedirect(reverse(listing_page))
+        return HttpResponseRedirect(reverse(listing_page, args=(id,)))
     else:
-        return HttpResponseRedirect(reverse(listing_page))
+        return HttpResponseRedirect(reverse(listing_page, args=(id,)))
+    
     
 # Make comment
+@login_required
 def add_comment(request, id):
     if request.user.is_authenticated:
         if request.method=="POST":
@@ -232,4 +242,33 @@ def add_comment(request, id):
         else:
             return HttpResponseRedirect(reverse(listing_page, args=(id,)))
     else:
+        return HttpResponseRedirect(reverse(listing_page, args=(id,)))  
+      
+
+
+# a watchlists
+def add_watchlist(request, id):
+    if request.method=="POST":
+        listing = Listing.objects.all().get(pk=id)
+        listing.watchlist.add(request.user)
+        listing.save()
         return HttpResponseRedirect(reverse(listing_page, args=(id,)))
+    else:
+        return HttpResponseRedirect(reverse(listing_page, args=(id,)))
+
+def remove_watchlist(request, id):
+    if request.method=="POST":
+        listing = Listing.objects.all().get(pk=id)
+        listing.watchlist.remove(request.user)
+        listing.save()
+        return HttpResponseRedirect(reverse(listing_page, args=(id,)))
+    else:
+        return HttpResponseRedirect(reverse(listing_page, args=(id,)))
+
+def watchlist(request):
+    if len(request.user.watchlisted.all())==0:
+        return render(request, "auctions/error.html")
+    else:
+        return render(request, "auctions/index.html", {
+                "listings" : request.user.watchlisted.all()
+        })
